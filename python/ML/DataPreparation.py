@@ -92,6 +92,45 @@ def load_data(filename, target='phi', reduced=False):
         target = 'phi'
 
     pi0RecoM = 0.136 #approximate pi0 mass taken from early fits do data in PF paper
+
+    # Variables to be used for ML
+    myVars = [
+        'tau_gammapt1', 'tau_gammaeta1','tau_gammaphi1_shift','tau_gammadphi1_abs','tau_gammadeta1',
+        'tau_gammapt2', 'tau_gammaeta2','tau_gammaphi2_shift','tau_gammadphi2_abs','tau_gammadeta2',
+        'tau_gammapt12', 'tau_gammaeta12','tau_gammaphi12_shift','tau_gammamass12_diff',
+        'tau_nGammas'
+    ]
+    myVars += ["tau_neutralpt", "tau_neutraleta", "tau_neutralphi_shift"]
+    #myVars += ["tau_pi0pt4", "tau_pi0eta4", "tau_pi0phi4_shift","tau_pi0mass4"]#my best guess
+    if not reduced:
+        #myVars += copy.deepcopy(variables)
+        myVars += [
+            'tau_pi0mass3_diff',
+            'tau_gammapt3', 'tau_gammaeta3_cor','tau_gammaphi3_shift','tau_gammadphi3_abs','tau_gammadeta3_cor',
+            'tau_gammapt4', 'tau_gammaeta4_cor','tau_gammaphi4_shift','tau_gammadphi4_abs','tau_gammadeta4_cor',
+            'tau_gammapt13', 'tau_gammaeta13','tau_gammaphi13_shift','tau_gammamass13_diff',
+            'tau_gammapt14', 'tau_gammaeta14','tau_gammaphi14_shift','tau_gammamass14_diff',
+            'tau_gammapt23', 'tau_gammaeta23','tau_gammaphi23_shift','tau_gammamass23_diff',
+            'tau_gammapt34', 'tau_gammaeta34','tau_gammaphi34_shift','tau_gammamass34_diff',
+            'tau_dm','tau_mvadm','rho','tau_nEle'
+        ]
+    #myTargetVars = copy.deepcopy(targetVars) # not possible to define several targets in one go with available XGB version
+    myTargetVars = []
+    if target=='phi':
+        #myTargetVars = ["tau_genpi0phi"]
+        myTargetVars = ["tau_genpi0phi_shift"]
+    elif target=='eta':
+        myTargetVars = ["tau_genpi0eta"]
+    elif target=='pt':
+        myTargetVars = ["tau_genpi0pt"]
+
+    # my best estimate
+    myBS = copy.deepcopy(bestGuess)
+    myBS += ['tau_gammapt1','tau_gammaeta1','tau_gammaphi1']
+    myBS += ['tau_phi','tau_genpi0phi']
+
+    columns = myVars + myTargetVars + myBS
+
     # Read data from ROOT files
     data_sig = ROOT.RDataFrame("per_tau", filename)\
                    .Define("tau_gammadphi1_abs", "(tau_gammapt1>0)*abs(tau_gammadphi1)")\
@@ -124,45 +163,11 @@ def load_data(filename, target='phi', reduced=False):
                    .Define("tau_gammaeta4_cor","tau_gammaeta4*(tau_gammapt4>0)+tau_eta*(tau_gammapt4<0)")\
                    .Define("tau_gammadeta3_cor","tau_gammadeta3*(tau_gammapt3>0)")\
                    .Define("tau_gammadeta4_cor","tau_gammadeta4*(tau_gammapt4>0)")\
-                   .AsNumpy()
+                   .AsNumpy(columns=columns)
 
-    myVars = [
-        'tau_gammapt1', 'tau_gammaeta1','tau_gammaphi1_shift','tau_gammadphi1_abs','tau_gammadeta1',
-        'tau_gammapt2', 'tau_gammaeta2','tau_gammaphi2_shift','tau_gammadphi2_abs','tau_gammadeta2',
-        'tau_gammapt12', 'tau_gammaeta12','tau_gammaphi12_shift','tau_gammamass12_diff',
-        'tau_nGammas'
-    ]
-    myVars += ["tau_neutralpt", "tau_neutraleta", "tau_neutralphi_shift"]
-    #myVars += ["tau_pi0pt4", "tau_pi0eta4", "tau_pi0phi4_shift","tau_pi0mass4"]#my best guess
-    if not reduced:
-        #myVars += copy.deepcopy(variables)
-        myVars += [
-            'tau_pi0mass3_diff',
-            'tau_gammapt3', 'tau_gammaeta3_cor','tau_gammaphi3_shift','tau_gammadphi3_abs','tau_gammadeta3_cor',
-            'tau_gammapt4', 'tau_gammaeta4_cor','tau_gammaphi4_shift','tau_gammadphi4_abs','tau_gammadeta4_cor',
-            'tau_gammapt13', 'tau_gammaeta13','tau_gammaphi13_shift','tau_gammamass13_diff',
-            'tau_gammapt14', 'tau_gammaeta14','tau_gammaphi14_shift','tau_gammamass14_diff',
-            'tau_gammapt23', 'tau_gammaeta23','tau_gammaphi23_shift','tau_gammamass23_diff',
-            'tau_gammapt34', 'tau_gammaeta34','tau_gammaphi34_shift','tau_gammamass34_diff',
-            'tau_dm','tau_mvadm','rho','tau_nEle'
-        ]
     # Convert inputs to format readable by machine learning tools
     x = np.vstack([data_sig[var] for var in myVars]).T
-    #myTargetVars = copy.deepcopy(targetVars) # not possible to define several targets in one go with available XGB version
-    myTargetVars = []
-    if target=='phi':
-        #myTargetVars = ["tau_genpi0phi"]
-        myTargetVars = ["tau_genpi0phi_shift"]
-    elif target=='eta':
-        myTargetVars = ["tau_genpi0eta"]
-    elif target=='pt':
-        myTargetVars = ["tau_genpi0pt"]
     y = np.vstack([data_sig[var] for var in myTargetVars]).T
-
-    # my best estimate
-    myBS = copy.deepcopy(bestGuess)
-    myBS += ['tau_gammapt1','tau_gammaeta1','tau_gammaphi1']
-    myBS += ['tau_phi','tau_genpi0phi']
     z = np.vstack([data_sig[var] for var in myBS]).T
 
     return x, y, z #myVars, myTargetVars, myBS
