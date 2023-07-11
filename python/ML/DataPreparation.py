@@ -166,9 +166,9 @@ def load_data(filename, target='phi', reduced=False):
                    .AsNumpy(columns=columns)
 
     # Convert inputs to format readable by machine learning tools
-    x = np.vstack([data_sig[var] for var in myVars]).T
-    y = np.vstack([data_sig[var] for var in myTargetVars]).T
-    z = np.vstack([data_sig[var] for var in myBS]).T
+    x = np.vstack([data_sig[var] for var in myVars]).astype(np.float32).T
+    y = np.vstack([data_sig[var] for var in myTargetVars]).astype(np.float32).T
+    z = np.vstack([data_sig[var] for var in myBS]).astype(np.float32).T
 
     return x, y, z #myVars, myTargetVars, myBS
 

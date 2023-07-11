@@ -15,6 +15,7 @@ import math
 from DataPreparation import load_data
 import utility_functions as utils
 
+########################
 def configureLegend(leg, ncolumn):
     leg.SetNColumns(ncolumn)
     leg.SetBorderSize(0)
@@ -25,8 +26,8 @@ def configureLegend(leg, ncolumn):
     leg.SetTextSize(0.035)
     leg.SetTextFont(42)
 
+########################
 if __name__ == "__main__":
-    # Load test data
     #reduced = False
     reduced = True
 
@@ -36,24 +37,35 @@ if __name__ == "__main__":
 
     training_type = 'signal'
     #training_type = 'tauGun'
-    #x_t, y_t, z_t = load_data('test_signal.root',target=target,reduced=reduced)
-    x_t, y_t, z_t = load_data('test_signal_deep2p5.root',target=target,reduced=reduced)
+
+    useRoot = False #use model stored in the TMVA root format
+
     model_dir = "training/"
     plot_dir = "figures/"
     os.makedirs(plot_dir, exist_ok=True)
 
+    # Load test data
+    #x_t, y_t, z_t = load_data('test_signal.root',target=target,reduced=reduced)
+    x_t, y_t, z_t = load_data('test_signal_deep2p5.root',target=target,reduced=reduced)
+
     # Load trained model
-    from xgboost import XGBRegressor
-    bdt = XGBRegressor()
+    btd = None
     model_name = ""
+    suffix = "root" if useRoot else "json"
+
     if not reduced:
-        model_name = utils.getLatestModelPath(trainingPath=model_dir, pattern="model_shift_"+training_type+"_"+target)
+        model_name = utils.getLatestModelPath(trainingPath=model_dir, pattern="model_shift_"+training_type+"_"+target, filetype=suffix)
     else:
-        model_name = utils.getLatestModelPath(trainingPath=model_dir, pattern="model_shift_reduced_"+training_type+"_"+target)
-    model_pattern = model_name[:model_name.find(".json")]
+        model_name = utils.getLatestModelPath(trainingPath=model_dir, pattern="model_shift_reduced_"+training_type+"_"+target, filetype=suffix)
+    model_pattern = model_name[:model_name.find("."+suffix)]
 
     print("Loading model:", model_name, flush=True)
-    bdt.load_model(model_dir+model_name)
+    if not useRoot:
+        from xgboost import XGBRegressor
+        bdt = XGBRegressor()
+        bdt.load_model(model_dir+model_name)
+    else:
+        bdt = ROOT.TMVA.Experimental.RBDT[""]("myBDT", model_dir+model_name)
 
     y_test = None
     if target!='phi': #gen phi is shifted
@@ -74,11 +86,14 @@ if __name__ == "__main__":
         z_test = z_t[:,0] #get 0th column (pt): pt/eta/phi/mass
         z2_test = z_t[:,4] #get (4+0)th column (2nd pt): pt/eta/phi
 
-    y_p = bdt.predict(x_t)
-    y_pred = y_p[:]
-    
-    print("Score:", bdt.score(x_t,y_t), flush=True)
+    y_pred = None
+    if not useRoot:
+        y_pred = bdt.predict(x_t)[:]
+        print("Score:", bdt.score(x_t,y_t), flush=True)
+    else:
+        y_pred = bdt.Compute(x_t)[:,0] + 0.5 #result of model stored with TMVA must be shifted by 0.5
 
+    # Define, fill and draw test historgams
     gROOT.SetBatch(True)
     ROOT.gErrorIgnoreLevel = ROOT.kWarning
     officialStyle(gStyle)

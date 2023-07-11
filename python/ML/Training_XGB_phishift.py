@@ -190,6 +190,7 @@ if __name__ == "__main__":
     print('Model:', bdt, flush=True)
 
     # Fit final model
+    print("Training with", x.shape[0], "events with", x.shape[1], "input features",  flush=True)
     current_time = datetime.now().strftime("%Y_%b_%d_%H_%M_%S")
     print("Training started:", current_time, flush=True)
     model_dir = "training/"
@@ -200,13 +201,20 @@ if __name__ == "__main__":
             verbose = False)
 
     # Save fitted model
-    if not reduced:
-        bdt.save_model(model_dir+"model_shift_"+sample_label+"_"+target+"_"+current_time+".json")
-    else:
-        bdt.save_model(model_dir+"model_shift_reduced_"+sample_label+"_"+target+"_"+current_time+".json")
+    model_name = "model_shift_"
+    if reduced:
+        model_name += "reduced_"
+    model_name += sample_label+"_"+target+"_"+current_time
+    print("Saving model in "+model_name+".json", flush=True)
+    bdt.save_model(model_dir+model_name+".json")
 
     # Save model in TMVA format
-    #ROOT.TMVA.Experimental.SaveXGBoost(bdt, "myBDT", "model_tmva.root") #it does not work for regression models?
+    print("Saving model with TMVA in "+model_name+".root", flush=True)
+    bdt.objective = 'reg:linear' # huck to store model in root format with objective recognised by TMVA
+    if hasattr(bdt, "base_score"):
+        if bdt.base_score == None:
+            bdt.base_score = 0 # set it to trivial value to not mislead TMVA with None
+    ROOT.TMVA.Experimental.SaveXGBoost(bdt, "myBDT", model_dir+model_name+".root", num_inputs=x.shape[1])
 
     current_time = datetime.now().strftime("%Y_%b_%d_%H_%M_%S")
     print("Training finished:", current_time, flush=True)
