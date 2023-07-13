@@ -147,14 +147,44 @@ if __name__ == '__main__':
 
     globaldebug = args.debug
     maxEvents = args.maxEvents
+    skipEvents = args.skipEvents
     tauCollection = args.tauCollection
     mvaid = args.mvaid
     add_anti_lepton = args.addAntiLepton
     add_mva_iso = args.addMVAIso
     inputfiles = args.inputfiles
+    outputFileName = args.outputFileName
+
+    cfg = args.cfg
+    process = None
+    if cfg!=None:
+        print("Configuration from cfg file:", cfg)
+        exec(open(cfg).read())
+    if process != None:
+        if hasattr(process,'maxEvents') and hasattr(process.maxEvents,'input'):
+            maxEvents = process.maxEvents.input.value()
+        if hasattr(process,'source'):
+            psource = process.source
+            if hasattr(psource,'fileNames'):
+                inputfiles = psource.fileNames.value()
+            if hasattr(psource,'skipEvents'):
+                skipEvents = psource.skipEvents.value()
+        if hasattr(process,'TFileService') and hasattr(process.TFileService,'fileName'):
+            outputFileName = process.TFileService.fileName.value()
+        if hasattr(process,'tauPi0Tree'):
+            treeConf = process.tauPi0Tree
+            if hasattr(treeConf,'mvaid'):
+                mvaid = treeConf.mvaid.value()
+            if hasattr(treeConf,'tauCollection'):
+                tauCollection = treeConf.tauCollection.value()
+            if hasattr(treeConf,'addAntiLepton'):
+                add_anti_lepton = treeConf.addAntiLepton.value()
+            if hasattr(treeConf,'addMVAIso'):
+                add_mva_iso = treeConf.addMVAIso.value()
+            if hasattr(treeConf,'debug'):
+                globaldebug = treeConf.debug.value()
 
     filelist = []
-
     if inputfiles:
         filelist = inputfiles
     else:
@@ -166,7 +196,6 @@ if __name__ == '__main__':
     print(len(filelist), "files will be analyzed:", filelist, '\nEvents will be analyzed: %i' % maxEvents)
 
     # +++++++ Output file +++++++++
-    outputFileName = args.outputFileName
     if not outputFileName:
         outputFileName = 'tauTreeForPi0Study.root'
         print('Name of output file is not specified, ' \
@@ -348,6 +377,9 @@ if __name__ == '__main__':
 
     start = time()
     for event in events:
+        if skipEvents>0:
+            skipEvents -= 1
+            continue;
         evtid += 1
         eid = event.eventAuxiliary().id().event()
         run = event.eventAuxiliary().run()

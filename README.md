@@ -37,7 +37,6 @@ python3 Test_XGB_phishift.py # edit it to define input files used
 ---
 ## TODOs
 * Provide crab tools
-* Add posibility to configure ntuplizer with a PSet (useful to run with crab)
 * Use command-line argument to define input files for ML tools
 * Improve ML model
 * ...
