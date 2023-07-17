@@ -13,6 +13,7 @@ import copy
 import math
 import glob, os
 from datetime import datetime
+import argparse # it needs to come after ROOT import
 
 from DataPreparation import load_data
 import utility_functions as utils
@@ -142,16 +143,18 @@ def rmspe_xgb(predt: np.ndarray, y_true: xgb.DMatrix):
 ########################
 if __name__ == "__main__":
 
-    target = 'phi'
-    #target = 'eta'
-    #target = 'pt'
+    # command line arguments parser
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    utils.addCommonConfArgs(parser)
+    args = parser.parse_args()
 
-    #reduced=False
-    reduced=True
+    target = args.target
+    reduced = args.reduced
+    sample_label = args.sampleLabel #'signal' / 'tauGun'
 
     # Load data
-    sample_label = 'signal'
-    #sample_label = 'tauGun'
     x, y, z = load_data("train_"+sample_label+".root", target=target, reduced=reduced)
     x_v, y_v, z_v = load_data("validate_"+sample_label+".root", target=target, reduced=reduced)
 
@@ -178,7 +181,7 @@ if __name__ == "__main__":
     elif target=='pt': #FIXME
         objective = 'reg:squarederror'
         eval_metric = 'rmse'
-        #objective = squared_err_pt 
+        #objective = squared_err_pt
         #eval_metric = rmspe_xgb # custom metric
 
     bdt = xgb.XGBRegressor(n_estimators=1000, max_depth=7, learning_rate=0.1,

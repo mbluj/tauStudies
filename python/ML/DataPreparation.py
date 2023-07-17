@@ -7,6 +7,8 @@
 import ROOT
 import copy
 import numpy as np
+import sys
+import argparse # it needs to come after ROOT import
 
 ########################
 def filter_events(df, dm=1):
@@ -172,35 +174,59 @@ def load_data(filename, target='phi', reduced=False):
 
     return x, y, z #myVars, myTargetVars, myBS
 
+########################
+def addConfArgs(parser):
+    parser.add_argument('-i', '--inputFiles', nargs='*', required=True, help='List of files (required)')
+    parser.add_argument('-d', '--inputDir', help='(Common) input directory')
+    parser.add_argument('-p', '--protocol', help='Prefix defining ROOT connection protocol, e.g. file, root, etc.')
+    parser.add_argument('-l', '--label', default='signal', help='Label to define sample type [Default: %(default)s]')
+
 ################################################
 if __name__ == "__main__":
-    for filename, label in [["data/ggH/Myroot_XYZ_ABC_ggHTT*.root", "signal"], ]:
-    #for filename, label in [["data/tauGun/Myroot_XYZ_ABC_tauGun*.root", "tauGun"], ]:
-        print(">>> Extract the training and testing events for {} from the {} dataset."
-              .format(label, filename))
 
-        # Load dataset, filter the required events and define the training variables
-        #filepath = "root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/" + filename
-        filepath = "file:./" + filename
-        ROOT.EnableImplicitMT();
-        #df = ROOT.RDataFrame("Events", filepath)
-        df = ROOT.RDataFrame("per_tau", filepath)
-        df = define_variables(df)
-        df = filter_events(df,dm=1)
+    # command line arguments parser
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    addConfArgs(parser)
+    args = parser.parse_args()
+    label = args.label
 
-        # Book cutflow report
-        report = df.Report()
+    inputFiles = args.inputFiles
+    if not inputFiles:
+        print('Please provide nonempty list of input files')
+        sys.exit(0)
+    inputDir = args.inputDir
+    if inputDir:
+        if inputDir[-1] != '/': inputDir += '/'
+        inputFiles = [inputDir+file for file in inputFiles]
+    cType = args.protocol #connection type
+    if cType:
+        if cType[-1] != ':': cType += ':'
+        inputFiles = [cType+file for file in inputFiles]
 
-        # Split dataset by event number for training and testing
-        columns = ROOT.std.vector["string"](allVars)
-        df.Filter("event % 3 == 1", "Select events with event number %3==1 for training")\
-          .Snapshot("per_tau", "train_" + label + ".root", columns)
-        df.Filter("event % 3 == 2", "Select events with event number %3==2 for testing")\
-          .Snapshot("per_tau", "test_" + label + ".root", columns)
-        df.Filter("event % 3 == 2 && (tau_deeptauv2p5vsjetraw > 0.9632 && tau_deeptauv2p5vsmuraw > 0.2949 && tau_deeptauv2p5vseraw > 0.0990)", "Select events with event number %3==2 and passing looses deepTau v2.5 WPs (MvsJet, VLvsMu, VVVLvsE ~65%) for testing")\
-          .Snapshot("per_tau", "test_" + label + "_deep2p5.root", columns)
-        df.Filter("event % 3 == 0", "Select events with event number divisible by three (%3==0) for validation")\
-          .Snapshot("per_tau", "validate_" + label + ".root", columns)
+    print(">>> Extract the training and testing events for {} from the {} dataset.".format(label, inputFiles))
 
-        # Print cutflow report
-        report.Print()
+    # Load dataset, filter the required events and define the training variables
+    ROOT.EnableImplicitMT();
+    #df = ROOT.RDataFrame("Events", inputFiles)
+    df = ROOT.RDataFrame("per_tau", inputFiles)
+    df = define_variables(df)
+    df = filter_events(df,dm=1)
+
+    # Book cutflow report
+    report = df.Report()
+
+    # Split dataset by event number for training and testing
+    columns = ROOT.std.vector["string"](allVars)
+    df.Filter("event % 3 == 1", "Select events with event number %3==1 for training")\
+      .Snapshot("per_tau", "train_" + label + ".root", columns)
+    df.Filter("event % 3 == 2", "Select events with event number %3==2 for testing")\
+      .Snapshot("per_tau", "test_" + label + ".root", columns)
+    df.Filter("event % 3 == 2 && (tau_deeptauv2p5vsjetraw > 0.9632 && tau_deeptauv2p5vsmuraw > 0.2949 && tau_deeptauv2p5vseraw > 0.0990)", "Select events with event number %3==2 and passing looses deepTau v2.5 WPs (MvsJet, VLvsMu, VVVLvsE ~65%) for testing")\
+      .Snapshot("per_tau", "test_" + label + "_deep2p5.root", columns)
+    df.Filter("event % 3 == 0", "Select events with event number divisible by three (%3==0) for validation")\
+      .Snapshot("per_tau", "validate_" + label + ".root", columns)
+
+    # Print cutflow report
+    report.Print()

@@ -11,6 +11,7 @@ import os
 import numpy as np
 import pickle
 import math
+import argparse # it needs to come after ROOT import
 
 from DataPreparation import load_data
 import utility_functions as utils
@@ -28,35 +29,45 @@ def configureLegend(leg, ncolumn):
 
 ########################
 if __name__ == "__main__":
-    #reduced = False
-    reduced = True
 
-    target = 'phi'
-    #target = 'eta'
-    #target = 'pt'
+    # command line arguments parser
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    utils.addCommonConfArgs(parser)
+    parser.add_argument('-i', '--inputSample', default='test_signal_deep2p5.root', help='Name of input sample for test [Default: %(default)s]')
+    parser.add_argument('--useRoot', default=False, action='store_true', help='Use model stored in TMVA root format, otherwise use XGBoost json format [Default: %(default)s]')
+    parser.add_argument('--dateStamp', help='Date stamp of model to be tested in format yyyy_Month_dd_hh_mm_ss, e.g. 2023_Jul_11_13_15_17; if not defined most recent model will be used')
+    args = parser.parse_args()
 
-    training_type = 'signal'
-    #training_type = 'tauGun'
+    target = args.target
+    reduced = args.reduced
+    training_type = args.sampleLabel #'signal' / 'tauGun'
 
-    useRoot = False #use model stored in the TMVA root format
+    useRoot = args.useRoot #use model stored in the TMVA root format
+    dateStamp = args.dateStamp
+
+    testSample = args.inputSample
 
     model_dir = "training/"
     plot_dir = "figures/"
     os.makedirs(plot_dir, exist_ok=True)
 
     # Load test data
-    #x_t, y_t, z_t = load_data('test_signal.root',target=target,reduced=reduced)
-    x_t, y_t, z_t = load_data('test_signal_deep2p5.root',target=target,reduced=reduced)
+    x_t, y_t, z_t = load_data(testSample,target=target,reduced=reduced)
 
     # Load trained model
     btd = None
-    model_name = ""
+    model_name = "model_shift_"
+    if reduced:
+        model_name += "reduced_"
+    model_name += training_type+"_"+target
     suffix = "root" if useRoot else "json"
 
-    if not reduced:
-        model_name = utils.getLatestModelPath(trainingPath=model_dir, pattern="model_shift_"+training_type+"_"+target, filetype=suffix)
+    if dateStamp:
+        model_name = model_name+"_"+dateStamp+"."+suffix
     else:
-        model_name = utils.getLatestModelPath(trainingPath=model_dir, pattern="model_shift_reduced_"+training_type+"_"+target, filetype=suffix)
+        model_name = utils.getLatestModelPath(trainingPath=model_dir, pattern=model_name, filetype=suffix)
     model_pattern = model_name[:model_name.find("."+suffix)]
 
     print("Loading model:", model_name, flush=True)

@@ -16,3 +16,9 @@ def phi_mpi_pi(x):
 
     return x
 
+########################
+def addCommonConfArgs(parser):
+    parser.add_argument('-t', '--target', default='phi', choices=['phi', 'eta', 'pt'],  help='Training target [Default: %(default)s]'),
+    parser.add_argument('-r', '--reduced', default=True, help='Use reduced number of input features [Default: %(default)s]'),
+    parser.add_argument('-s', '--sampleLabel', default='signal', help='Label defining type of training sample [Default: %(default)s]')
+

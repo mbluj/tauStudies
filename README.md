@@ -19,24 +19,23 @@ python3 produceTauTreeForPi0Study.py -i /eos/cms/store/mc/RunIISummer20UL18MiniA
 ## Data preparation for ML tools
 ```
 cd tauStudies/python/ML
-python3 DataPreparation.py # edit it to define input files used
+python3 DataPreparation.py # use --help to check input parameters
 ```
 
 ## XGBoost model training
 ```
 cd tauStudies/python/ML
-python3 Training_XGB_phishift.py # edit it to define input files used
+python3 Training_XGB_phishift.py # use --help to check input parameters
 ```
 
 ## XGBoost model testing
 ```
 cd tauStudies/python/ML
-python3 Test_XGB_phishift.py # edit it to define input files used
+python3 Test_XGB_phishift.py # use --help to check input parameters
 ```
 
 ---
 ## TODOs
 * Provide crab tools
-* Use command-line argument to define input files for ML tools
 * Improve ML model
 * ...
