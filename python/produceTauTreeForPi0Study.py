@@ -157,9 +157,11 @@ if __name__ == '__main__':
 
     cfg = args.cfg
     process = None
-    if cfg!=None:
+    if cfg != None:
         print("Configuration from cfg file:", cfg)
-        exec(open(cfg).read())
+        f_cfg = open(cfg)
+        exec(f_cfg.read())
+        f_cfg.close()
     if process != None:
         if hasattr(process,'maxEvents') and hasattr(process.maxEvents,'input'):
             maxEvents = process.maxEvents.input.value()
