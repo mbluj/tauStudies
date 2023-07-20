@@ -70,12 +70,12 @@ def prepareCrabCfg(eventsPerJob,
     config.JobType.scriptExe = 'runAllSteps.py'
     params = None
     if prefetch:
-        params = ['--prefetch']
+        params = ['--prefetch=1']
     if tauIdsToRun:
         if params:
-            params.append('--runtauids')
+            params.append('--runtauids=1')
         else:
-            params = ['--runtauids']
+            params = ['--runtauids=1']
     config.JobType.scriptArgs = params
     config.JobType.inputFiles = inputFiles
     config.JobType.outputFiles = ['tauTreeForPi0Study.root']

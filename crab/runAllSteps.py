@@ -7,8 +7,8 @@ import argparse
 
 #########################################
 def addArguments(parser):
-    parser.add_argument('-r', '--runtauids', default=False, action='store_true', help='Run tauIds on top of miniAOD [Default: %(default)s]')
-    parser.add_argument('--prefetch', default=False, action='store_true', help='Prefetch files for processing [Default: %(default)s]')    
+    parser.add_argument('-r', '--runtauids', default=0, type=int, choices=[0,1], help='Run tauIds on top of miniAOD [Default: %(default)s]')
+    parser.add_argument('--prefetch', default=0, type=int, choices=[0,1], help='Prefetch files for processing [Default: %(default)s]')
 
 #########################################
 if __name__ == '__main__':
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     prefetch = args.prefetch
     
     # First step: update PSet cfg provided by Crab in case of prefetch
-    if prefetch:
+    if prefetch==1:
         handle = open("PSet.py", 'r')
         exec(handle.read())
         cmsProcess = process
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         os.system(command)
 
     # 2nd & 3rd steps: run tauIds if requested and produce trees
-    if runTauIds:
+    if runTauIds==1:
         command = "cmsRun -j FrameworkJobReport.xml PSet.py"
         os.system(command)        
         command = "python3 produceTauTreeForPi0Study.py -i patTuple_newTauIDs.root -t slimmedTausNewID -m deepTau2017v2p1VSjet deepTau2017v2p1VSe deepTau2017v2p1VSmu deepTau2018v2p5VSjet deepTau2018v2p5VSe deepTau2018v2p5VSmu againstMuon3 MVADM"
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         exec(handle.read())
         cmsProcess = process
         handle.close()
-        if not prefetch:
+        if prefetch!=1:
             fileNamesNew = []
             for f in cmsProcess.source.fileNames:
                 if f.find("/store")>-1:
