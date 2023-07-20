@@ -17,7 +17,7 @@ python3 produceTauTreeForPi0Study.py -i /eos/cms/store/mc/RunIISummer20UL18MiniA
 ```
 ### Grid production with crab
 ```
-cd tauStudies/python/crab
+cd tauStudies/crab
 python3 submitJobs.py # use --help to check input parameters
 ```
 

@@ -39,14 +39,14 @@ def prepareCrabCfg(eventsPerJob,
     ##Modify CRAB3 configuration
     config.JobType.allowUndistributedCMSSW = False
     config.JobType.pluginName = 'Analysis'
-    inputFiles = ['../produceTauTreeForPi0Study.py',
-                  '../Var.py',
-                  '../relValTools.py',
-                  '../tau_ids.py']
+    inputFiles = ['../python/produceTauTreeForPi0Study.py',
+                  '../python/Var.py',
+                  '../python/relValTools.py',
+                  '../python/tau_ids.py']
     if tauIdsToRun:
         # need to build final cfg here as crab packs only process into picked file
         # hack to set tauIds using args
-        cfgName = 'runTauIDsOnMiniAOD.py'
+        cfgName = '../python/runTauIDsOnMiniAOD.py'
         tauIdsStr = 'mvaIds='
         for tauId in tauIdsToRun:
             tauIdsStr += tauId+','
@@ -64,7 +64,7 @@ def prepareCrabCfg(eventsPerJob,
         config.JobType.psetName = 'PSetTmp.py'
         config.JobType.numCores = 4
     else:
-        config.JobType.psetName = '../tauPi0Tree_cfg.py'
+        config.JobType.psetName = '../python/tauPi0Tree_cfg.py'
         config.JobType.numCores = 1
     config.JobType.disableAutomaticOutputCollection = True
     config.JobType.scriptExe = 'runAllSteps.py'
