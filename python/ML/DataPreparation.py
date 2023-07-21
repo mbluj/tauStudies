@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 ##
 ## \date August 2022
 ## \author Michal Bluj

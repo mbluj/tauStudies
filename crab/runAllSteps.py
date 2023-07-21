@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os 
@@ -7,6 +7,7 @@ import argparse
 
 #########################################
 def addArguments(parser):
+    parser.add_argument('jobno', metavar='N', type=int, nargs=1, help='job number')
     parser.add_argument('-r', '--runtauids', default=0, type=int, choices=[0,1], help='Run tauIds on top of miniAOD [Default: %(default)s]')
     parser.add_argument('--prefetch', default=0, type=int, choices=[0,1], help='Prefetch files for processing [Default: %(default)s]')
 
@@ -20,6 +21,7 @@ if __name__ == '__main__':
     addArguments(parser)
     args = parser.parse_args()
 
+    jobNo = args.jobno #job number, set by crab but not used
     runTauIds = args.runtauids
     prefetch = args.prefetch
     

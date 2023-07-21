@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ''' Produces a flat tree for tau pi0 studies; based on produceTauValTree.py from TauReleaseValidation
 Authors: Michal Bluj

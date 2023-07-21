@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, re, sys
 #import commands
@@ -19,6 +19,7 @@ def prepareCrabCfg(eventsPerJob,
                    storage_element,
                    outputDatasetTag,
                    inputDataset,
+                   inputDBS = 'global',
                    tauIdsToRun = [],
                    prefetch = False,
                    whiteList = [],
@@ -85,7 +86,7 @@ def prepareCrabCfg(eventsPerJob,
     config.General.workArea = "crab3_TauTrees"
     
     config.Data.inputDataset = inputDataset
-    config.Data.inputDBS = "global" #FIXME, can be optional linked do dataset name (global or phys03)
+    config.Data.inputDBS = inputDBS
     config.Data.outLFNDirBase = outLFNDirBase+outputDatasetTag
     config.Data.publication = True
     config.Data.outputDatasetTag = outputDatasetTag
@@ -106,14 +107,14 @@ def prepareCrabCfg(eventsPerJob,
 
     fullWorkDirName = config.General.workArea+"/crab_"+config.General.requestName
     requestExists = len(glob.glob(fullWorkDirName))!=0
-    if requestExists:
+    if requestExists and not runLocal:
         print("Request with name: {} exists. Skipping.".format(fullWorkDirName))
         return
 
     if runLocal:
         testDir = 'crab3_test/'
         os.makedirs(testDir, exist_ok=True)
-        os.system('rm '+testDir+'/*')
+        os.system('rm -rf '+testDir+'/*')
         for f in inputFiles:
             os.system('cp -a '+f+' '+testDir)
         os.system('cp -a '+config.JobType.psetName+' '+testDir+'/PSet.py')
@@ -122,14 +123,13 @@ def prepareCrabCfg(eventsPerJob,
         if config.JobType.scriptArgs:
             for a in config.JobType.scriptArgs:
                 argStr += a+' '
-        command = 'cd '+testDir+'; python3 ' +'runAllSteps.py '+argStr+' >& out_all_steps.log &'
+        command = 'cd '+testDir+'; ./runAllSteps.py 1 '+argStr+' >& out_all_steps.log &'
         os.system(command)
     else:
         out = open('crabTmp.py','w')
         out.write(config.pythonise_())
         out.close()
         os.system("crab submit -c crabTmp.py")
-        #os.system("crab submit -c crabTmp.py --dryrun")
         #crabCommand('submit', config = config)
     os.system("rm -f crabTmp.py* PSetTmp.py*")
 
@@ -137,8 +137,9 @@ def prepareCrabCfg(eventsPerJob,
 def addArguments(parser):
     parser.add_argument('-n', '--eventsPerJob', metavar='eventsPerJob', default=100000, type=int, help='Number of events per job that will be processed [Default: %(default)s]')
     parser.add_argument('-j', '--numberOfJobs', metavar='numberOfJobs', default=-1, type=int, help='Number of of job that will be run (-1: as many jobs to process all events) [Default: %(default)s]')
-    parser.add_argument('-s', '--storageElement', metavar='storageElement', default='T2_PL_Swierk', help='Grid Storage Element [Default: %(default)s]')
-    parser.add_argument('--outLFNDir', metavar='outLFNDir',  default='/store/user/bluj/PiZeroStudy/', help='LFN output directory (should be /store/user/your-user-name/[something]) [Default: %(default)s]')
+    parser.add_argument('-s', '--storageElement', metavar='storageElement', default='T3_CH_CERNBOX', help='Grid Storage Element [Default: %(default)s]')
+    username = os.environ['USER'] if 'USER' in os.environ else 'username'
+    parser.add_argument('--outLFNDir', metavar='outLFNDir',  default='/store/user/'+username+'/PiZeroStudy/', help='LFN output directory (should be /store/user/user-name/[something]) [Default: %(default)s]')
     parser.add_argument('-i', '--inputDatasets', metavar='inputDataset', default=[], nargs='*', help='List of input datasets (if empty a hard-coded list will be used)')
     parser.add_argument('-m', '--mvaid', default=[], nargs='*', help='List of tauIds to be rerun, e.g. [deepTau2018v2p5, ...] [Default: %(default)s]')
     parser.add_argument('-v', '--version', default='v1', help='Set production version [Default: %(default)s]')
@@ -146,6 +147,7 @@ def addArguments(parser):
     parser.add_argument('--ignoreLocality', default=False, action='store_true', help='Ignore location of a dataset [Default: %(default)s]')
     parser.add_argument('--whiteList', nargs='*', help='White list of grid sites')
     parser.add_argument('--blackList', nargs='*', help='Black list of grid sites')
+    parser.add_argument('--dbs', default='global', choices=['global','phys03'], help='Input DBS instance [Default: %(default)s]')
     parser.add_argument('--runLocal', default=False, action='store_true', help='Run locally (for tests only) [Default: %(default)s]')
 
 #########################################
@@ -182,6 +184,7 @@ if __name__ == '__main__':
     blackList = args.blackList
     ignoreLocality = args.ignoreLocality
     tauIdsToRun = args.mvaid
+    inputDBS = args.dbs
 
 ########################################################
 for inputDataset in inputDatasets:
@@ -191,6 +194,7 @@ for inputDataset in inputDatasets:
                    storage_element = storage_element,
                    outputDatasetTag = outputDatasetTag,
                    inputDataset = inputDataset,
+                   inputDBS = inputDBS,
                    tauIdsToRun = tauIdsToRun,
                    prefetch = prefetch,
                    whiteList = whiteList,
